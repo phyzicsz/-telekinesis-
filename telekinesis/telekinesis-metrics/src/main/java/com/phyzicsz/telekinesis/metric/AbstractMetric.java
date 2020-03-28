@@ -16,10 +16,11 @@
 package com.phyzicsz.telekinesis.metric;
 
 
-import com.phyzicsz.telekinesis.metrics.utils.NameUtils;
+
+import akka.actor.typed.ActorRef;
+import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Base class for all the metrics.
@@ -30,16 +31,19 @@ import java.util.function.Consumer;
  */
 abstract class AbstractMetric<T> implements Metric {
 
-  private final String name;
-  private final String help;
-  private final List<String> labelNames;
+  protected final String name;
+  protected final String help;
+  protected final List<String> labelNames;
+  protected final ActorRef<MetricEvent> collectorReference;
 
   AbstractMetric(final String name,
                  final String help,
-                 final String[] labelNames) {
+                 final String[] labelNames,
+                 final ActorRef<MetricEvent> collectorReference) {
     this.name = name;
     this.help = help;
     this.labelNames = Arrays.asList(labelNames);
+    this.collectorReference = collectorReference;
   }
 
   T createMetric() {

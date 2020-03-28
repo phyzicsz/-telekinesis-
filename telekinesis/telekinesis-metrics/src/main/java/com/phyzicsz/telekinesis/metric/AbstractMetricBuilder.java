@@ -15,8 +15,9 @@
  */
 package com.phyzicsz.telekinesis.metric;
 
-import static com.phyzicsz.telekinesis.metrics.utils.NameUtils.validateLabelNames;
-import static com.phyzicsz.telekinesis.metrics.utils.NameUtils.validateMetricName;
+import akka.actor.typed.ActorRef;
+import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import com.phyzicsz.telekinesis.metrics.utils.NameUtils;
 import com.phyzicsz.telekinesis.metrics.utils.StringUtils;
 import com.phyzicsz.telekinesis.metrics.utils.Validate;
 
@@ -31,16 +32,26 @@ import com.phyzicsz.telekinesis.metrics.utils.Validate;
  */
 public abstract class AbstractMetricBuilder<T extends AbstractMetric, B extends AbstractMetricBuilder<T, B>> {
 
-    private final String name;
-    private final String help;
+    private String name;
+    private String help;
 
     private String namespace = "";
     private String subsystem = "";
     String[] labelNames = new String[]{};
+    private ActorRef<MetricEvent> collectorReference;
 
-    AbstractMetricBuilder(final String name, final String help) {
+    AbstractMetricBuilder() {
+
+    }
+    
+    public B withName(final String name){
         this.name = name;
+        return getThis();
+    }
+    
+    public B withHelp(final String help){
         this.help = help;
+        return getThis();
     }
 
     public B withSubsystem(final String subsystem) {
@@ -57,19 +68,36 @@ public abstract class AbstractMetricBuilder<T extends AbstractMetric, B extends 
         this.labelNames = labelNames;
         return getThis();
     }
+    
+    public B withCollectorReference(final ActorRef<MetricEvent> collectorReference) {
+        this.collectorReference = collectorReference;
+        return getThis();
+    }
 
-    protected abstract T create(final String fullName, final String help, final String[] labelNames);
+    protected abstract T create(final String fullName, 
+            final String help, 
+            final String[] labelNames,
+            final ActorRef<MetricEvent> collectorReference);
+    
+    protected abstract MetricEvent onNewEvent(final String fullName, 
+            final String help, 
+            final String[] labelNames);
 
     public T build() {
         validateParams();
-        final T metric = create(createFullName(), help, labelNames);
+        String fullName = createFullName();
+        final T metric = create(fullName, help, labelNames,collectorReference);
+        MetricEvent event = onNewEvent(fullName, help, labelNames);
+        collectorReference.tell(event);
         return metric;
     }
 
     void validateParams() {
-        Validate.notBlank(help, "The metric's help must contain text");
-        validateMetricName(name);
-        validateLabelNames(labelNames);
+        //checkNotNull(collectorReference);
+        Validate.notBlank(name, "The metric's name must be set");
+        Validate.notBlank(help, "The metric's help must be set");
+        NameUtils.validateMetricName(name);
+        NameUtils.validateLabelNames(labelNames);
     }
 
     private String createFullName() {

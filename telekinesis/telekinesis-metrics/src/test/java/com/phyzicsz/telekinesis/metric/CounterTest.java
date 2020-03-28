@@ -15,17 +15,22 @@
  */
 package com.phyzicsz.telekinesis.metric;
 
-import com.outbrain.swinfra.metrics.Counter.CounterBuilder;
+
+import akka.actor.testkit.typed.javadsl.ActorTestKit;
+import akka.actor.testkit.typed.javadsl.TestProbe;
+import akka.actor.typed.ActorRef;
 import com.outbrain.swinfra.metrics.MetricCollector;
 import com.outbrain.swinfra.metrics.MetricRegistry;
 import com.outbrain.swinfra.metrics.exporter.text.TextFormatter;
+import com.phyzicsz.telekinesis.metric.actor.CollectorActor;
+import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import io.prometheus.client.CollectorRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import static org.mockito.Mockito.mock;
 
 /**
  *
@@ -33,10 +38,17 @@ import static org.mockito.Mockito.mock;
  */
 public class CounterTest {
 
+    static final ActorTestKit testKit = ActorTestKit.create();
+    
     private static final String NAME = "Counter1";
     private static final String HELP = "Counter1 help";
 
     public CounterTest() {
+    }
+    
+    @AfterAll
+    public static void cleanup() {
+        testKit.shutdownTestKit();
     }
 
     /**
@@ -89,6 +101,30 @@ public class CounterTest {
 
         assert (true);
 
+    }
+    
+    @Test
+    public void akkaCollectorTest() throws IOException {
+        
+        ActorRef<MetricEvent> collectorReference = testKit.spawn(CollectorActor.create(), "metrics");
+        TestProbe<MetricEvent> probe = testKit.createTestProbe();
+        
+        //creating a new Counter will generate a new CounterCreationEvent
+        Counter other = new Counter.CounterBuilder()
+                .withName(NAME)
+                .withHelp(HELP)
+                .withLabels("MetricLabel1")
+                .withCollectorReference(probe.ref())
+                .build();
+        
+        //should look like this
+        MetricEvent event = CounterCreateEvent.builder()
+                    .name(NAME)
+                    .help(HELP)
+                    .labelNames("MetricLabel1")
+                    .build();
+                
+         MetricEvent actual = probe.expectMessage(event);
     }
 
 }

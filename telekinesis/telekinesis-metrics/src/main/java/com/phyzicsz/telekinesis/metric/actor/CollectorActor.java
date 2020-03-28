@@ -15,10 +15,65 @@
  */
 package com.phyzicsz.telekinesis.metric.actor;
 
+import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
+import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
+import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+
 /**
  *
  * @author phyzicsz <phyzics.z@gmail.com>
  */
-public class CollectorActor {
+public class CollectorActor extends AbstractBehavior<MetricEvent> {
+
+    private CollectorActor(ActorContext<MetricEvent> context) {
+        super(context);
+    }
+
+    @Override
+    public Receive<MetricEvent> createReceive() {
+        return newReceiveBuilder()
+                .onMessage(MetricEvent.class, this::onMetricEvent)
+                .build();
+    }
     
+    public static Behavior<MetricEvent> create() {
+        return Behaviors.setup(CollectorActor::new);
+    }
+
+//    public static Props props() {
+//        return Props.create(CollectorActor.class, () -> new CollectorActor());
+//    }
+//    
+//    public static Behavior<MetricEvent> create() {
+//    return Behaviors.setup(
+//        context ->
+//            Behaviors.receive(MetricEvent.class)
+//                .onMessage(
+//                    PrintMe.class,
+//                    printMe -> {
+//                      context.getLog().info(printMe.message);
+//                      return Behaviors.same();
+//                    })
+//                .build());
+//  }
+//
+//    @Override
+//    public Receive createReceive() {
+//        return receiveBuilder()
+//                .match(MetricEvent.class, this::onMetricEvent)
+//                .build();
+//    }
+//    private void onMetricEvent(MetricEvent event) {
+//
+//        log().debug("onEvent");
+//    }
+    private Behavior<MetricEvent> onMetricEvent(MetricEvent event) {
+        getContext().getLog().info("onMetricEvent!");
+        
+        return Behaviors.same();
+    }
+
 }
