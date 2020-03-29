@@ -15,9 +15,9 @@
  */
 package com.phyzicsz.telekinesis.metric;
 
-
 import akka.actor.typed.ActorRef;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import java.util.concurrent.atomic.LongAdder;
@@ -35,14 +35,14 @@ import java.util.concurrent.atomic.LongAdder;
  * @author phyzicsz <phyzics.z@gmail.com>
  */
 public class Counter extends AbstractMetric<LongAdder> {
-
+    
     private Counter(final String name,
             final String help,
             final String[] labelNames,
             final ActorRef<MetricEvent> collectorReference) {
         super(name, help, labelNames, collectorReference);
     }
-
+    
     public void inc(final String... labelValues) {
         CounterMonotonicIncrementEvent event = CounterMonotonicIncrementEvent.builder()
                 .name(name)
@@ -53,32 +53,40 @@ public class Counter extends AbstractMetric<LongAdder> {
         collectorReference.tell(event);
         //inc(1, labelValues);
     }
-
+    
     public void inc(final long n, final String... labelValues) {
-
+        
+        CounterIncrementEvent event = CounterIncrementEvent.builder()
+                .name(name)
+                .labelNames(labelNames)
+                .labelValues(labelValues)
+                .inc(n)
+                .build();
+        
+        collectorReference.tell(event);
     }
-
+    
     public long getValue(final String... labelValues) {
         return 0;
     }
-
+    
     @Override
     LongAdder createMetric() {
         return new LongAdder();
     }
-
+    
     @Override
     public MetricType getType() {
         return MetricType.COUNTER;
     }
-
+    
     public static class CounterBuilder extends AbstractMetricBuilder<Counter, CounterBuilder> {
-
+        
         @Override
         protected Counter create(final String fullName, final String help, final String[] labelNames, final ActorRef<MetricEvent> collectorReference) {
             return new Counter(fullName, help, labelNames, collectorReference);
         }
-
+        
         @Override
         protected MetricEvent onNewEvent(final String fullName, final String help, final String[] labelNames) {
             MetricEvent event = CounterCreateEvent.builder()
@@ -86,10 +94,10 @@ public class Counter extends AbstractMetric<LongAdder> {
                     .help(help)
                     .labelNames(labelNames)
                     .build();
-                    
+            
             return event;
         }
-
+        
     }
-
+    
 }

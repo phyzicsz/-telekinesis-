@@ -61,17 +61,21 @@ public class CounterTest {
 
         MetricRegistry registry = new MetricRegistry();
         
-        final com.outbrain.swinfra.metrics.Counter other = new com.outbrain.swinfra.metrics.Counter.CounterBuilder(NAME, HELP)
+        final com.outbrain.swinfra.metrics.Counter counter = new com.outbrain.swinfra.metrics.Counter.CounterBuilder(NAME, HELP)
                 .withLabels("MetricLabel1")
                 .build();
+        registry.getOrRegister(counter);
+
+        counter.inc(1, "A");
+        counter.inc(2, "B");
         
-        registry.getOrRegister(other);
+        final com.outbrain.swinfra.metrics.SettableGauge gauge = new com.outbrain.swinfra.metrics.SettableGauge.SettableGaugeBuilder("Guage1", HELP)
+                .withLabels("GaugeLabel")
+                .build();
+        registry.getOrRegister(gauge);
 
-        other.inc(1, "A");
-        other.inc(2, "B");
-
-        Long aValue = other.getValue("A");
-        Long bValue = other.getValue("B");
+        gauge.set(20, "Gauge1Value");
+        
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         MetricCollector collector = new MetricCollector(registry);

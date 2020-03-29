@@ -27,7 +27,7 @@ public class CounterMetricData {
     private String help;
     private String[] labelNames;
     private String[] labelValues;
-    LongAdder counter;
+    private LongAdder counter;
 
     public CounterMetricData name(final String value) {
         this.name = value;

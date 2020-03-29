@@ -18,7 +18,9 @@ package com.phyzicsz.telekinesis.metric.repository;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
+import java.io.Writer;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -49,12 +51,28 @@ public class CounterRepository {
         
         CounterMetricData data = lookup(event.name(),event.labelNames());
         
-        if(data.counter == null){
+        if(data.getCounter() == null){
             data.labelValues(event.labelValues());
-            data.counter = new LongAdder();
-            data.counter.increment();
+            data.counter(new LongAdder());
+            data.getCounter().increment();
         }else{
-            data.counter.increment();
+            data.getCounter().increment();
+        }
+        
+        counterRepository.put(event.name(), key, data);
+    }
+    
+    public void onCounterIncrementEvent(CounterIncrementEvent event){
+        StringsKey key = new StringsKey(event.labelNames());
+        
+        CounterMetricData data = lookup(event.name(),event.labelNames());
+        
+        if(data.getCounter() == null){
+            data.labelValues(event.labelValues());
+            data.counter(new LongAdder());
+            data.getCounter().add(event.inc());
+        }else{
+            data.getCounter().add(event.inc());
         }
         
         counterRepository.put(event.name(), key, data);
@@ -63,7 +81,10 @@ public class CounterRepository {
     public CounterMetricData lookup(String name, String...labels){
         StringsKey key = new StringsKey(labels);
         CounterMetricData metricData = counterRepository.get(name, key);
-        
         return metricData;
+    }
+    
+    public void export(Writer stream){
+        
     }
 }

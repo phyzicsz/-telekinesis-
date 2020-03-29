@@ -21,8 +21,10 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import com.phyzicsz.telekinesis.metric.repository.CounterRepository;
 
 /**
  *
@@ -30,31 +32,42 @@ import com.phyzicsz.telekinesis.metric.events.MetricEvent;
  */
 public class CollectorActor extends AbstractBehavior<MetricEvent> {
 
+    private final CounterRepository counterRepository;
+    
     private CollectorActor(ActorContext<MetricEvent> context) {
         super(context);
+        
+        counterRepository = new CounterRepository();
     }
-            
+
     @Override
     public Receive<MetricEvent> createReceive() {
         return newReceiveBuilder()
                 .onMessage(CounterCreateEvent.class, this::onCounterCreateEvent)
                 .onMessage(CounterMonotonicIncrementEvent.class, this::onCounterMonotonicIncrementEvent)
+                .onMessage(CounterIncrementEvent.class, this::onCounterIncrementEvent)
                 .build();
     }
-    
+
     public static Behavior<MetricEvent> create() {
         return Behaviors.setup(CollectorActor::new);
     }
 
     private Behavior<MetricEvent> onCounterCreateEvent(CounterCreateEvent event) {
         getContext().getLog().info("onCounterCreateEvent!");
-        
+        counterRepository.onCounterCreateEvent(event);
+        return Behaviors.same();
+    }
+
+    private Behavior<MetricEvent> onCounterMonotonicIncrementEvent(CounterMonotonicIncrementEvent event) {
+        getContext().getLog().info("onCounterCounterMonotonicIncrementEvent!");
+        counterRepository.onCounterMonotonicIncrementEvent(event);
         return Behaviors.same();
     }
     
-     private Behavior<MetricEvent> onCounterMonotonicIncrementEvent(CounterMonotonicIncrementEvent event) {
-        getContext().getLog().info("onCounterCounterMonotonicIncrementEvent!");
-        
+    private Behavior<MetricEvent> onCounterIncrementEvent(CounterIncrementEvent event) {
+        getContext().getLog().info("onCounterIncrementEvent!");
+        counterRepository.onCounterIncrementEvent(event);
         return Behaviors.same();
     }
 
