@@ -22,31 +22,29 @@ import java.util.Objects;
  *
  * @author phyzicsz <phyzics.z@gmail.com>
  */
-public class CounterCreateEvent implements MetricEvent {
+public class CounterMonotonicIncrementEvent implements MetricEvent {
 
     private final  String name;
-    private final  String help;
     private final  String[] labelNames;
-
+    private final  String[] labelValues;
+    
     public String name() {
         return name;
     }
-    
-     public String help() {
-        return help;
+
+    public String[] labelNames() {
+        return labelNames;
     }
     
-    
-
-    public String[] labels() {
+     public String[] labelValues() {
         return labelNames;
     }
 
     public static class Builder {
 
         private String name;
-         private String help;
         private String[] labelNames;
+        private String[] labelValues;
 
         private Builder() {
         }
@@ -55,38 +53,38 @@ public class CounterCreateEvent implements MetricEvent {
             this.name = value;
             return this;
         }
-        
-        public Builder help(final String value) {
-            this.help = value;
-            return this;
-        }
 
         public Builder labelNames(final String... value) {
             this.labelNames = value;
             return this;
         }
+        
+        public Builder labelValues(final String... value) {
+            this.labelValues = value;
+            return this;
+        }
 
-        public CounterCreateEvent build() {
-            return new com.phyzicsz.telekinesis.metric.events.CounterCreateEvent(name, help, labelNames);
+        public CounterMonotonicIncrementEvent build() {
+            return new com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent(name, labelNames,labelValues);
         }
     }
 
-    public static CounterCreateEvent.Builder builder() {
-        return new CounterCreateEvent.Builder();
+    public static CounterMonotonicIncrementEvent.Builder builder() {
+        return new CounterMonotonicIncrementEvent.Builder();
     }
 
-    private CounterCreateEvent(final String name, final String help, final String[] labelNames) {
+    private CounterMonotonicIncrementEvent(final String name, final String[] labelNames,final String[] labelValues) {
         this.name = name;
-        this.help = help;
         this.labelNames = labelNames;
+        this.labelValues = labelValues;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 59 * hash + Objects.hashCode(this.name);
-        hash = 59 * hash + Objects.hashCode(this.help);
-        hash = 59 * hash + Arrays.deepHashCode(this.labelNames);
+        hash = 47 * hash + Objects.hashCode(this.name);
+        hash = 47 * hash + Arrays.deepHashCode(this.labelNames);
+        hash = 47 * hash + Arrays.deepHashCode(this.labelValues);
         return hash;
     }
 
@@ -101,19 +99,18 @@ public class CounterCreateEvent implements MetricEvent {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final CounterCreateEvent other = (CounterCreateEvent) obj;
+        final CounterMonotonicIncrementEvent other = (CounterMonotonicIncrementEvent) obj;
         if (!Objects.equals(this.name, other.name)) {
             return false;
         }
-        if (!Objects.equals(this.help, other.help)) {
+        if (!Arrays.deepEquals(this.labelNames, other.labelNames)) {
             return false;
         }
-        if (!Arrays.deepEquals(this.labelNames, other.labelNames)) {
+        if (!Arrays.deepEquals(this.labelValues, other.labelValues)) {
             return false;
         }
         return true;
     }
 
    
-    
 }

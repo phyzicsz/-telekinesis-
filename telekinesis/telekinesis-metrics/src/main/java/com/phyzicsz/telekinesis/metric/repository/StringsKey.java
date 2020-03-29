@@ -13,21 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.phyzicsz.telekinesis.metric;
+package com.phyzicsz.telekinesis.metric.repository;
 
-import java.util.List;
+import java.util.Arrays;
 
 /**
- * Interface for all metrics
- * 
+ *
  * @author phyzicsz <phyzics.z@gmail.com>
  */
-public interface Metric {
-  MetricType getType();
+ public class StringsKey {
+    private final String[] labelValues;
 
-  String getName();
+    public StringsKey(final String[] labelValues) {
+      this.labelValues = labelValues;
+    }
 
-  String getHelp();
+    @Override
+    public boolean equals(final Object obj) {
+      return Arrays.equals(labelValues, ((StringsKey) obj).labelValues);
+    }
 
-  String[] getLabelNames();
-}
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(labelValues);
+    }
+  }

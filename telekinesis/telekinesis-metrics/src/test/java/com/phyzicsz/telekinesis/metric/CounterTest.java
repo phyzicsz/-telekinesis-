@@ -17,6 +17,7 @@ package com.phyzicsz.telekinesis.metric;
 
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
+import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import com.outbrain.swinfra.metrics.MetricCollector;
@@ -24,6 +25,7 @@ import com.outbrain.swinfra.metrics.MetricRegistry;
 import com.outbrain.swinfra.metrics.exporter.text.TextFormatter;
 import com.phyzicsz.telekinesis.metric.actor.CollectorActor;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import io.prometheus.client.CollectorRegistry;
 import java.io.ByteArrayOutputStream;

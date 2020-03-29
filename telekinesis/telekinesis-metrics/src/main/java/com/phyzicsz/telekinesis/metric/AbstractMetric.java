@@ -33,7 +33,7 @@ abstract class AbstractMetric<T> implements Metric {
 
   protected final String name;
   protected final String help;
-  protected final List<String> labelNames;
+  protected final String[] labelNames;
   protected final ActorRef<MetricEvent> collectorReference;
 
   AbstractMetric(final String name,
@@ -42,7 +42,7 @@ abstract class AbstractMetric<T> implements Metric {
                  final ActorRef<MetricEvent> collectorReference) {
     this.name = name;
     this.help = help;
-    this.labelNames = Arrays.asList(labelNames);
+    this.labelNames = labelNames;
     this.collectorReference = collectorReference;
   }
 
@@ -61,7 +61,7 @@ abstract class AbstractMetric<T> implements Metric {
   }
 
   @Override
-  public List<String> getLabelNames() {
+  public String[] getLabelNames() {
     return labelNames;
   }
 }

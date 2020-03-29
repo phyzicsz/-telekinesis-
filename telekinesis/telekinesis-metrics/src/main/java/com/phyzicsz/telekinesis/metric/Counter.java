@@ -18,6 +18,7 @@ package com.phyzicsz.telekinesis.metric;
 
 import akka.actor.typed.ActorRef;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
+import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -43,7 +44,14 @@ public class Counter extends AbstractMetric<LongAdder> {
     }
 
     public void inc(final String... labelValues) {
-        inc(1, labelValues);
+        CounterMonotonicIncrementEvent event = CounterMonotonicIncrementEvent.builder()
+                .name(name)
+                .labelNames(labelNames)
+                .labelValues(labelValues)
+                .build();
+        
+        collectorReference.tell(event);
+        //inc(1, labelValues);
     }
 
     public void inc(final long n, final String... labelValues) {

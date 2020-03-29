@@ -50,6 +50,7 @@
         <!-- dependancies -->
         <akka.version>2.6.4</akka.version>
         <google.errorprone.version>2.3.4</google.errorprone.version>
+        <guava.version>28.2-jre</guava.version>
         <logback.version>1.2.3</logback.version>
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.29</slf4j.version>
@@ -67,6 +68,11 @@
     
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor-typed_${scala.version}</artifactId>
