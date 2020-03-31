@@ -21,6 +21,8 @@ import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import java.io.Writer;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -85,6 +87,17 @@ public class CounterRepository {
     }
     
     public void export(Writer stream){
+        Set<String> keys = counterRepository.rowKeySet();
         
+        for(String key: keys){
+            Map<StringsKey,CounterMetricData> map = counterRepository.row(key);
+            if(map.isEmpty()){
+                continue;
+            }
+                
+            Map.Entry<StringsKey,CounterMetricData> entry = map.entrySet().iterator().next();
+        }
     }
+    
+    
 }

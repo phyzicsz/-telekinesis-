@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.phyzicsz.telekinesis.metric.repository;
+package com.phyzicsz.telekinesis.metric.actor;
 
-import com.outbrain.swinfra.metrics.Metric;
+
+import com.phyzicsz.telekinesis.metric.Metric;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -26,16 +27,14 @@ import java.io.Writer;
  * @author phyzicsz <phyzics.z@gmail.com>
  */
 public class TextFormatter {
-    
-//    public void exportTo(final OutputStream outputStream) throws IOException {
-//        final Writer stream = new OutputStreamWriter(outputStream);
-//        final com.outbrain.swinfra.metrics.exporter.text.TextFormatter.TextMetricDataConsumer consumer = new com.outbrain.swinfra.metrics.exporter.text.TextFormatter.TextMetricDataConsumer(metricCollector.getStaticLabels(), stream);
-//        for (final Metric metric : metricCollector) {
-//            final String header = headerByMetric.computeIfAbsent(metric, this::createHeader);
-//            stream.append(header);
-//
-//            metric.forEachMetricData(consumer);
-//        }
-//        stream.flush();
-//    }
+
+    public String header(final Metric metric) {
+        return "# HELP " + metric.getName() + " " + escapeHelp(metric.getHelp()) + "\n"
+                + "# TYPE " + metric.getName() + " " + metric.getType().getName() + "\n";
+    }
+
+    private static String escapeHelp(final String help) {
+        return help.replace("\\", "\\\\").replace("\n", "\\n");
+    }
+
 }

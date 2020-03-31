@@ -23,8 +23,13 @@ import akka.actor.typed.javadsl.Receive;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
+import com.phyzicsz.telekinesis.metric.events.ExportReplyEvent;
+import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import com.phyzicsz.telekinesis.metric.repository.CounterRepository;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 /**
  *
@@ -46,6 +51,7 @@ public class CollectorActor extends AbstractBehavior<MetricEvent> {
                 .onMessage(CounterCreateEvent.class, this::onCounterCreateEvent)
                 .onMessage(CounterMonotonicIncrementEvent.class, this::onCounterMonotonicIncrementEvent)
                 .onMessage(CounterIncrementEvent.class, this::onCounterIncrementEvent)
+                .onMessage(ExportRequestEvent.class, this::onExportEvent)
                 .build();
     }
 
@@ -53,21 +59,32 @@ public class CollectorActor extends AbstractBehavior<MetricEvent> {
         return Behaviors.setup(CollectorActor::new);
     }
 
-    private Behavior<MetricEvent> onCounterCreateEvent(CounterCreateEvent event) {
+    private Behavior<MetricEvent> onCounterCreateEvent(final CounterCreateEvent event) {
         getContext().getLog().info("onCounterCreateEvent!");
         counterRepository.onCounterCreateEvent(event);
         return Behaviors.same();
     }
 
-    private Behavior<MetricEvent> onCounterMonotonicIncrementEvent(CounterMonotonicIncrementEvent event) {
+    private Behavior<MetricEvent> onCounterMonotonicIncrementEvent(final CounterMonotonicIncrementEvent event) {
         getContext().getLog().info("onCounterCounterMonotonicIncrementEvent!");
         counterRepository.onCounterMonotonicIncrementEvent(event);
         return Behaviors.same();
     }
     
-    private Behavior<MetricEvent> onCounterIncrementEvent(CounterIncrementEvent event) {
+    private Behavior<MetricEvent> onCounterIncrementEvent(final CounterIncrementEvent event) {
         getContext().getLog().info("onCounterIncrementEvent!");
         counterRepository.onCounterIncrementEvent(event);
+        return Behaviors.same();
+    }
+    
+    private Behavior<MetricEvent> onExportEvent(final ExportRequestEvent event) {
+        getContext().getLog().info("onExportEvent!");
+        
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final Writer stream = new OutputStreamWriter(outputStream);
+        counterRepository.export(stream);
+        
+        event.getReplyTo().tell(new ExportReplyEvent().text("Yahoo"));
         return Behaviors.same();
     }
 
