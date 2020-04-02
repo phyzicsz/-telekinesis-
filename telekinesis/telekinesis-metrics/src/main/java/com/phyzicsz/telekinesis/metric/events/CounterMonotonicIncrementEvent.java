@@ -37,7 +37,7 @@ public class CounterMonotonicIncrementEvent implements MetricEvent {
     }
     
      public String[] labelValues() {
-        return labelNames;
+        return labelValues;
     }
 
     public static class Builder {

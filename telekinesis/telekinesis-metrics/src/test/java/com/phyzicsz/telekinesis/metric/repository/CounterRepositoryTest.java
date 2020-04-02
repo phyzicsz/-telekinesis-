@@ -25,11 +25,17 @@ import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportReplyEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import java.util.Arrays;
 import java.util.concurrent.atomic.LongAdder;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,29 +49,13 @@ public class CounterRepositoryTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(CounterRepositoryTest.class);
     static final ActorTestKit testKit = ActorTestKit.create();
 
-    public CounterRepositoryTest() {
-    }
-
-    @BeforeAll
-    public static void setUpClass() {
-    }
-
     @AfterAll
     public static void tearDownClass() {
         testKit.shutdownTestKit();
     }
 
-    @BeforeEach
-    public void setUp() {
-    }
-
-    @AfterEach
-    public void tearDown() {
-    }
-
-    /**
-     * Test of onCounterCreateEvent method, of class CounterRepository.
-     */
+   
+    @DisplayName("Test Counter Create Event")
     @Test
     public void testOnCounterCreateEvent() {
         System.out.println("onCounterCreateEvent");
@@ -80,14 +70,46 @@ public class CounterRepositoryTest {
 
         MetricData<LongAdder> data = repository.lookup("MetricCounter1", "A");
 
-        CounterMonotonicIncrementEvent monotonicInc = CounterMonotonicIncrementEvent.builder()
+        assertAll("numbers", 
+                () -> assertEquals(data.name, "MetricCounter1"),
+                () -> assertEquals(data.help, "Metric Help"),
+                () -> assertThat(Arrays.asList(data.labelNames), hasItems("A")),
+                () -> assertEquals(data.value, null)
+        );
+
+    }
+    
+    @DisplayName("Test Counter Increment Event")
+    @Test
+    public void testCounterIncrement() {
+        System.out.println("onCounterCreateEvent");
+        
+        CounterCreateEvent createEvent = CounterCreateEvent.builder()
+                .name("MetricCounter1")
+                .labelNames("A")
+                .help("Metric Help")
+                .build();
+
+        CounterRepository repository = new CounterRepository();
+        repository.onCounterCreateEvent(createEvent);
+
+       
+        CounterMonotonicIncrementEvent incrementEvent = CounterMonotonicIncrementEvent.builder()
                 .name("MetricCounter1")
                 .labelNames("A")
                 .labelValues("a")
                 .build();
-        repository.onCounterMonotonicIncrementEvent(monotonicInc);
+        repository.onCounterMonotonicIncrementEvent(incrementEvent);
 
-        MetricData<LongAdder> dataPlusOne = repository.lookup("MetricCounter1", "A");
+        MetricData<LongAdder> data = repository.lookup("MetricCounter1", "A");
+
+        assertAll("numbers", 
+                () -> assertEquals(data.name, "MetricCounter1"),
+                () -> assertEquals(data.help, "Metric Help"),
+                () -> assertThat(Arrays.asList(data.labelNames), hasItems("A")),
+                () -> assertEquals(data.value.doubleValue(), 1.0)
+
+        );
 
         int i = 0;
     }
@@ -116,8 +138,7 @@ public class CounterRepositoryTest {
         ExportReplyEvent actual = probe.expectMessageClass(ExportReplyEvent.class);
         
         LOGGER.info(actual.getText());
-        
-        int i = 0;
+       
     }
 
 }
