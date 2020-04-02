@@ -28,8 +28,11 @@ import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import com.phyzicsz.telekinesis.metric.repository.CounterRepository;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -38,10 +41,10 @@ import java.io.Writer;
 public class CollectorActor extends AbstractBehavior<MetricEvent> {
 
     private final CounterRepository counterRepository;
-    
+
     private CollectorActor(ActorContext<MetricEvent> context) {
         super(context);
-        
+
         counterRepository = new CounterRepository();
     }
 
@@ -70,21 +73,20 @@ public class CollectorActor extends AbstractBehavior<MetricEvent> {
         counterRepository.onCounterMonotonicIncrementEvent(event);
         return Behaviors.same();
     }
-    
+
     private Behavior<MetricEvent> onCounterIncrementEvent(final CounterIncrementEvent event) {
         getContext().getLog().info("onCounterIncrementEvent!");
         counterRepository.onCounterIncrementEvent(event);
         return Behaviors.same();
     }
-    
+
     private Behavior<MetricEvent> onExportEvent(final ExportRequestEvent event) {
         getContext().getLog().info("onExportEvent!");
-        
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        final Writer stream = new OutputStreamWriter(outputStream);
-        counterRepository.export(stream);
-        
-        event.getReplyTo().tell(new ExportReplyEvent().text("Yahoo"));
+
+        StringBuilder sb = new StringBuilder();
+        counterRepository.export(sb);
+        event.getReplyTo().tell(new ExportReplyEvent().text(sb.toString()));
+
         return Behaviors.same();
     }
 

@@ -24,6 +24,12 @@ import java.util.Arrays;
  public class StringsKey {
     private final String[] labelValues;
 
+    public String[] getLabelValues() {
+        return labelValues;
+    }
+    
+    
+
     public StringsKey(final String[] labelValues) {
       this.labelValues = labelValues;
     }

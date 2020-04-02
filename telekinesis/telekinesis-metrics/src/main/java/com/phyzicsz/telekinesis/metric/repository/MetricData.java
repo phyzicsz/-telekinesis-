@@ -15,34 +15,74 @@
  */
 package com.phyzicsz.telekinesis.metric.repository;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static java.util.Collections.emptyList;
+import com.phyzicsz.telekinesis.metric.MetricType;
 
 /**
  * Holder for the metric data in the metrics repository
+ *
  * @author phyzicsz <phyzics.z@gmail.com>
  * @param <T> The parameterized data type given the metric
  */
-public class MetricData<T> {
-  private final T metric;
-  private final List<String> labelValues;
+public class MetricData<T>{
 
-  public MetricData(final T metric) {
-    this(metric, null);
-  }
+    protected MetricType metricType;
+    protected T value;
+    protected String name;
+    protected String help;
+    protected String[] labelNames;
+    protected String[] labelValues; 
 
-  public MetricData(final T metric, final List<String> labelValues) {
-    this.metric = metric;
-    this.labelValues = labelValues == null ? emptyList() : labelValues;
-  }
+    public MetricData metricType(final MetricType value) {
+        this.metricType = value;
+        return this;
+    }
 
-  public T getMetric() {
-    return metric;
-  }
+    public MetricData value(final T value) {
+        this.value = value;
+        return this;
+    }
 
-  public List<String> getLabelValues() {
-    return labelValues;
-  }
+    public MetricData name(final String value) {
+        this.name = value;
+        return this;
+    }
+
+    public MetricData help(final String value) {
+        this.help = value;
+        return this;
+    }
+
+    public MetricData labelNames(final String[] value) {
+        this.labelNames = value;
+        return this;
+    }
+
+    public MetricData labelValues(final String[] value) {
+        this.labelValues = value;
+        return this;
+    }
+
+    public MetricType getMetricType() {
+        return metricType;
+    }
+
+    public T getValue() {
+        return value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getHelp() {
+        return help;
+    }
+
+    public String[] getLabelNames() {
+        return labelNames;
+    }
+
+    public String[] getLabelValues() {
+        return labelValues;
+    }  
 }

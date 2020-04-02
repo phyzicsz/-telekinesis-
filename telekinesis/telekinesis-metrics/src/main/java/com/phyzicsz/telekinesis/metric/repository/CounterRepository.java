@@ -17,10 +17,11 @@ package com.phyzicsz.telekinesis.metric.repository;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.phyzicsz.telekinesis.metric.MetricType;
+import com.phyzicsz.telekinesis.metric.actor.PrometheusExpositionWriter;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
-import java.io.Writer;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author phyzicsz <phyzics.z@gmail.com>
  */
 public class CounterRepository {
-    private final Table<String, StringsKey, CounterMetricData> counterRepository;
+    private final Table<String, StringsKey, MetricData<LongAdder>> counterRepository;
     
     public CounterRepository(){
         counterRepository = HashBasedTable.create();
@@ -39,11 +40,13 @@ public class CounterRepository {
     public void onCounterCreateEvent(CounterCreateEvent event){
         StringsKey key = new StringsKey(event.labels());
         
-        CounterMetricData data = new CounterMetricData()
+        MetricData<LongAdder> data =  new MetricData<LongAdder>()
                 .name(event.name())
                 .help(event.help())
                 .labelNames(event.labels())
-                .counter(null);
+                .metricType(MetricType.COUNTER)
+                .value(null);
+                
         
         counterRepository.put(event.name(), key, data);
     }
@@ -51,14 +54,14 @@ public class CounterRepository {
     public void onCounterMonotonicIncrementEvent(CounterMonotonicIncrementEvent event){
         StringsKey key = new StringsKey(event.labelNames());
         
-        CounterMetricData data = lookup(event.name(),event.labelNames());
+        MetricData<LongAdder> data = lookup(event.name(),event.labelNames());
         
-        if(data.getCounter() == null){
+        if(data.getValue()== null){
             data.labelValues(event.labelValues());
-            data.counter(new LongAdder());
-            data.getCounter().increment();
+            data.value(new LongAdder());
+            data.getValue().increment();
         }else{
-            data.getCounter().increment();
+            data.getValue().increment();
         }
         
         counterRepository.put(event.name(), key, data);
@@ -67,35 +70,47 @@ public class CounterRepository {
     public void onCounterIncrementEvent(CounterIncrementEvent event){
         StringsKey key = new StringsKey(event.labelNames());
         
-        CounterMetricData data = lookup(event.name(),event.labelNames());
+        MetricData<LongAdder> data = lookup(event.name(),event.labelNames());
         
-        if(data.getCounter() == null){
+        if(data.getValue()== null){
             data.labelValues(event.labelValues());
-            data.counter(new LongAdder());
-            data.getCounter().add(event.inc());
+            data.value(new LongAdder());
+            data.getValue().add(event.inc());
         }else{
-            data.getCounter().add(event.inc());
+            data.getValue().add(event.inc());
         }
         
         counterRepository.put(event.name(), key, data);
     }
     
-    public CounterMetricData lookup(String name, String...labels){
+    public MetricData<LongAdder> lookup(String name, String...labels){
         StringsKey key = new StringsKey(labels);
-        CounterMetricData metricData = counterRepository.get(name, key);
+        MetricData<LongAdder> metricData = counterRepository.get(name, key);
         return metricData;
     }
     
-    public void export(Writer stream){
+    public void export(StringBuilder sb) {
+        PrometheusExpositionWriter exporter = new PrometheusExpositionWriter();
+        
         Set<String> keys = counterRepository.rowKeySet();
         
         for(String key: keys){
-            Map<StringsKey,CounterMetricData> map = counterRepository.row(key);
+            Map<StringsKey,MetricData<LongAdder>> map = counterRepository.row(key);
             if(map.isEmpty()){
                 continue;
             }
-                
-            Map.Entry<StringsKey,CounterMetricData> entry = map.entrySet().iterator().next();
+            
+            //grab the first record to write the header...
+            Map.Entry<StringsKey,MetricData<LongAdder>> entry = map.entrySet().iterator().next();
+            exporter.header(sb, entry.getValue());
+            
+            for (Map.Entry<StringsKey, MetricData<LongAdder>> rows : map.entrySet()) {
+                StringsKey labelKey = rows.getKey();
+                MetricData<LongAdder> metric = rows.getValue();
+                exporter.consumeCounter(sb, metric, metric.labelValues, metric.value.doubleValue());
+            }
+            
+            
         }
     }
     

@@ -25,11 +25,14 @@ import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportReplyEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import java.util.concurrent.atomic.LongAdder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -37,6 +40,7 @@ import org.junit.jupiter.api.Test;
  */
 public class CounterRepositoryTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CounterRepositoryTest.class);
     static final ActorTestKit testKit = ActorTestKit.create();
 
     public CounterRepositoryTest() {
@@ -74,7 +78,7 @@ public class CounterRepositoryTest {
         CounterRepository repository = new CounterRepository();
         repository.onCounterCreateEvent(event);
 
-        CounterMetricData data = repository.lookup("MetricCounter1", "A");
+        MetricData<LongAdder> data = repository.lookup("MetricCounter1", "A");
 
         CounterMonotonicIncrementEvent monotonicInc = CounterMonotonicIncrementEvent.builder()
                 .name("MetricCounter1")
@@ -83,7 +87,7 @@ public class CounterRepositoryTest {
                 .build();
         repository.onCounterMonotonicIncrementEvent(monotonicInc);
 
-        CounterMetricData dataPlusOne = repository.lookup("MetricCounter1", "A");
+        MetricData<LongAdder> dataPlusOne = repository.lookup("MetricCounter1", "A");
 
         int i = 0;
     }
@@ -94,14 +98,15 @@ public class CounterRepositoryTest {
         TestProbe<MetricEvent> probe = testKit.createTestProbe();
 
         //creating a new Counter will generate a new CounterCreationEvent
-        Counter other = new Counter.CounterBuilder()
+        Counter counter = new Counter.CounterBuilder()
                 .withName("MetricCounter1")
                 .withHelp("Metric Help")
                 .withLabels("MetricLabel1")
-                .withCollectorReference(probe.ref())
+                .withCollectorReference(collectorReference)
                 .build();
         
-         CounterCreateEvent counterCreateEvent = probe.expectMessageClass(CounterCreateEvent.class);
+        counter.inc("a");
+//         CounterCreateEvent counterCreateEvent = probe.expectMessageClass(CounterCreateEvent.class);
 
         ExportRequestEvent exportRequest = new ExportRequestEvent()
                 .replyTo(probe.ref());
@@ -109,6 +114,8 @@ public class CounterRepositoryTest {
         collectorReference.tell(exportRequest);
 
         ExportReplyEvent actual = probe.expectMessageClass(ExportReplyEvent.class);
+        
+        LOGGER.info(actual.getText());
         
         int i = 0;
     }

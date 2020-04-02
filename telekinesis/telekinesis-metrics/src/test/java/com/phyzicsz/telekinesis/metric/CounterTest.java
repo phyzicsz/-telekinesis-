@@ -17,7 +17,6 @@ package com.phyzicsz.telekinesis.metric;
 
 
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
-import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import com.outbrain.swinfra.metrics.MetricCollector;
@@ -25,14 +24,16 @@ import com.outbrain.swinfra.metrics.MetricRegistry;
 import com.outbrain.swinfra.metrics.exporter.text.TextFormatter;
 import com.phyzicsz.telekinesis.metric.actor.CollectorActor;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
-import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import com.phyzicsz.telekinesis.metric.repository.CounterRepositoryTest;
 import io.prometheus.client.CollectorRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
  */
 public class CounterTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CounterRepositoryTest.class);
     static final ActorTestKit testKit = ActorTestKit.create();
     
     private static final String NAME = "Counter1";
@@ -83,7 +85,7 @@ public class CounterTest {
         formatter.exportTo(output);
 
         String metricString = output.toString();
-
+        LOGGER.info("Export: {}", metricString);
         assert (true);
 
     }
@@ -104,7 +106,7 @@ public class CounterTest {
         io.prometheus.client.exporter.common.TextFormat.write004(writer, registry.metricFamilySamples());
         
         String metricString = writer.toString();
-
+        LOGGER.info("Export: {}", metricString);
         assert (true);
 
     }
