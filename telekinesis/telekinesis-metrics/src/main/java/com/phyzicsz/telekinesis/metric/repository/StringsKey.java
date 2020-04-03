@@ -22,16 +22,23 @@ import java.util.Arrays;
  * @author phyzicsz <phyzics.z@gmail.com>
  */
  public class StringsKey {
+     private final static String NO_KEY = "NO_KEY";
     private final String[] labelValues;
 
     public String[] getLabelValues() {
         return labelValues;
     }
     
+    public static String[] getNoKey(){
+        return new String[]{NO_KEY};
+    }
     
-
     public StringsKey(final String[] labelValues) {
-      this.labelValues = labelValues;
+        if(labelValues == null){
+            this.labelValues = getNoKey();
+        }else{
+            this.labelValues = labelValues;
+        }
     }
 
     @Override

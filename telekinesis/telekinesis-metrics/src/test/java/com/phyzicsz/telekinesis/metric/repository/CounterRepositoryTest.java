@@ -18,6 +18,8 @@ package com.phyzicsz.telekinesis.metric.repository;
 import akka.actor.testkit.typed.javadsl.ActorTestKit;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import com.phyzicsz.telekinesis.metric.Counter;
 import com.phyzicsz.telekinesis.metric.actor.CollectorActor;
 import com.phyzicsz.telekinesis.metric.events.CounterCreateEvent;
@@ -25,16 +27,16 @@ import com.phyzicsz.telekinesis.metric.events.CounterMonotonicIncrementEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportReplyEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
+import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.concurrent.atomic.LongAdder;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -55,6 +57,29 @@ public class CounterRepositoryTest {
     }
 
    
+    @DisplayName("Test guava table keya")
+    @Test
+    public void guavaTableKeyTest() {
+        Table<String, StringsKey, LongAdder> counterRepository = HashBasedTable.create();;
+        
+        StringsKey aKey = new StringsKey(new String[]{"A"});
+        LongAdder counter = new LongAdder();
+        counter.increment();
+        counterRepository.put("name", aKey,counter);
+        
+        LongAdder actual = counterRepository.get("name", aKey);
+        
+        assertEquals(counter,actual);
+        
+        counter.increment();
+        counterRepository.put("name", new StringsKey(StringsKey.getNoKey()), counter);
+        
+        actual = counterRepository.get("name", aKey);
+        
+        assertEquals(2.0,actual.doubleValue());
+
+    }
+    
     @DisplayName("Test Counter Create Event")
     @Test
     public void testOnCounterCreateEvent() {
@@ -111,11 +136,55 @@ public class CounterRepositoryTest {
 
         );
 
-        int i = 0;
+    }
+    
+    @DisplayName("Test Counter Increment Event")
+    @Test
+    public void testCounterIncrementNoLabel() {
+        System.out.println("onCounterCreateEvent");
+        
+        CounterCreateEvent createEvent = CounterCreateEvent.builder()
+                .name("MetricCounter1")
+                .help("Metric Help")
+                .build();
+
+        CounterRepository repository = new CounterRepository();
+        repository.onCounterCreateEvent(createEvent);
+
+       
+        CounterMonotonicIncrementEvent incrementEvent = CounterMonotonicIncrementEvent.builder()
+                .name("MetricCounter1")
+                .build();
+        repository.onCounterMonotonicIncrementEvent(incrementEvent);
+
+        MetricData<LongAdder> data = repository.lookup("MetricCounter1");
+
+        assertAll("numbers", 
+                () -> assertEquals(data.name, "MetricCounter1"),
+                () -> assertEquals(data.help, "Metric Help"),
+                () -> assertEquals(data.value.doubleValue(), 1.0)
+
+        );
+
     }
 
+    @DisplayName("Test Counter Export (Single Label)")
     @Test
-    public void testExport() {
+    public void testCounterSingleLabelExport() throws IOException {
+        CollectorRegistry registry = new CollectorRegistry();
+        io.prometheus.client.Counter other = io.prometheus.client.Counter.build()
+                .name("MetricCounter1")
+                .help("Metric Help")
+                .labelNames("MetricLabel1")
+                .register(registry);
+        
+        other.labels("a").inc(1);
+        
+        StringWriter writer = new StringWriter();
+        io.prometheus.client.exporter.common.TextFormat.write004(writer, registry.metricFamilySamples());
+        String prometheusString = writer.toString();
+        
+        
         ActorRef<MetricEvent> collectorReference = testKit.spawn(CollectorActor.create(), "metrics");
         TestProbe<MetricEvent> probe = testKit.createTestProbe();
 
@@ -135,9 +204,9 @@ public class CounterRepositoryTest {
 
         collectorReference.tell(exportRequest);
 
-        ExportReplyEvent actual = probe.expectMessageClass(ExportReplyEvent.class);
+        ExportReplyEvent telekinesisString = probe.expectMessageClass(ExportReplyEvent.class);
         
-        LOGGER.info(actual.getText());
+        assertEquals(prometheusString,telekinesisString.getText());
        
     }
 

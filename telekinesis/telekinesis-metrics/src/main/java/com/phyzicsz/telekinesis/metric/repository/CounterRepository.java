@@ -54,7 +54,7 @@ public class CounterRepository {
     public void onCounterMonotonicIncrementEvent(CounterMonotonicIncrementEvent event){
         StringsKey key = new StringsKey(event.labelNames());
         
-        MetricData<LongAdder> data = lookup(event.name(),event.labelNames());
+        MetricData<LongAdder> data = counterRepository.get(event.name(), key);
         
         if(data.getValue()== null){
             data.labelValues(event.labelValues());
@@ -70,7 +70,7 @@ public class CounterRepository {
     public void onCounterIncrementEvent(CounterIncrementEvent event){
         StringsKey key = new StringsKey(event.labelNames());
         
-        MetricData<LongAdder> data = lookup(event.name(),event.labelNames());
+        MetricData<LongAdder> data = counterRepository.get(event.name(), key);
         
         if(data.getValue()== null){
             data.labelValues(event.labelValues());
@@ -86,6 +86,12 @@ public class CounterRepository {
     public MetricData<LongAdder> lookup(String name, String...labels){
         StringsKey key = new StringsKey(labels);
         MetricData<LongAdder> metricData = counterRepository.get(name, key);
+        return metricData;
+    }
+    
+    public MetricData<LongAdder> lookup(String name){
+        
+        MetricData<LongAdder> metricData = lookup(name,null);
         return metricData;
     }
     
