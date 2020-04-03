@@ -3,7 +3,6 @@ package com.phyzicsz.telekinesis.metrics.utils;
 
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 public class NameUtils {
@@ -34,8 +33,8 @@ public class NameUtils {
                 "The metric name '" + name + "' is invalid. See " + PROMETHEUS_NAMING_URL);
     }
 
-    public static void validateLabelsCount(final String metricName, final List<String> labelNames, final String[] labelValues) {
-        Validate.isTrue(labelNames.size() == labelValues.length, "%s has the following labels: %s but got: %s", metricName, labelNames, Arrays.toString(labelValues));
+    public static void validateLabelsCount(final String metricName, final String[] labelNames, final String[] labelValues) {
+        Validate.isTrue(labelNames.length == labelValues.length, "%s has the following labels: %s but got: %s", metricName, Arrays.toString(labelNames), Arrays.toString(labelValues));
     }
 
     public static void validateLabelValuesContainText(final String... labelValues) {

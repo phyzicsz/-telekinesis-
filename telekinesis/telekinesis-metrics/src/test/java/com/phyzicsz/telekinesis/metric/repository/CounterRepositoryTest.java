@@ -57,7 +57,7 @@ public class CounterRepositoryTest {
     }
 
    
-    @DisplayName("Test guava table keya")
+    @DisplayName("Test guava table keys")
     @Test
     public void guavaTableKeyTest() {
         Table<String, StringsKey, LongAdder> counterRepository = HashBasedTable.create();;
@@ -133,12 +133,11 @@ public class CounterRepositoryTest {
                 () -> assertEquals(data.help, "Metric Help"),
                 () -> assertThat(Arrays.asList(data.labelNames), hasItems("A")),
                 () -> assertEquals(data.value.doubleValue(), 1.0)
-
         );
 
     }
     
-    @DisplayName("Test Counter Increment Event")
+    @DisplayName("Test Counter Increment (No Labels) Event")
     @Test
     public void testCounterIncrementNoLabel() {
         System.out.println("onCounterCreateEvent");
@@ -162,8 +161,41 @@ public class CounterRepositoryTest {
         assertAll("numbers", 
                 () -> assertEquals(data.name, "MetricCounter1"),
                 () -> assertEquals(data.help, "Metric Help"),
-                () -> assertEquals(data.value.doubleValue(), 1.0)
+                () -> assertEquals(data.value.doubleValue(), 1.0),
+                () -> assertEquals(data.labelNames, null)
+        );
 
+    }
+    
+    @DisplayName("Test Counter Increment (Multiple Labels) Event")
+    @Test
+    public void testCounterIncrementMultipleLabels() {
+        System.out.println("onCounterCreateEvent");
+        
+        CounterCreateEvent createEvent = CounterCreateEvent.builder()
+                .name("MetricCounter1")
+                .help("Metric Help")
+                .labelNames("A","B")
+                .build();
+
+        CounterRepository repository = new CounterRepository();
+        repository.onCounterCreateEvent(createEvent);
+
+       
+        CounterMonotonicIncrementEvent incrementEvent = CounterMonotonicIncrementEvent.builder()
+                .name("MetricCounter1")
+                .labelNames("A","B")
+                .labelValues("a","b")
+                .build();
+        repository.onCounterMonotonicIncrementEvent(incrementEvent);
+
+        MetricData<LongAdder> data = repository.lookup("MetricCounter1","A","B");
+        
+        assertAll("numbers", 
+                () -> assertEquals(data.name, "MetricCounter1"),
+                () -> assertEquals(data.help, "Metric Help"),
+                () -> assertEquals(data.value.doubleValue(), 1.0),
+                () -> assertThat(Arrays.asList(data.labelNames), hasItems("A","B"))
         );
 
     }
@@ -206,6 +238,51 @@ public class CounterRepositoryTest {
 
         ExportReplyEvent telekinesisString = probe.expectMessageClass(ExportReplyEvent.class);
         
+        assertEquals(prometheusString,telekinesisString.getText());
+       
+    }
+    
+    @DisplayName("Test Counter Export (Multiple Label)")
+    @Test
+    public void testCounterMultipleLabelExport() throws IOException {
+        CollectorRegistry registry = new CollectorRegistry();
+        io.prometheus.client.Counter other = io.prometheus.client.Counter.build()
+                .name("MetricCounter1")
+                .help("Metric Help")
+                .labelNames("A","B")
+                .register(registry);
+        
+        other.labels("a","b").inc(1);
+        
+        StringWriter writer = new StringWriter();
+        io.prometheus.client.exporter.common.TextFormat.write004(writer, registry.metricFamilySamples());
+        String prometheusString = writer.toString();
+        
+        
+        
+        ActorRef<MetricEvent> collectorReference = testKit.spawn(CollectorActor.create(), "multipleLabelMetrics");
+        TestProbe<MetricEvent> probe = testKit.createTestProbe();
+
+        //creating a new Counter will generate a new CounterCreationEvent
+        Counter counter = new Counter.CounterBuilder()
+                .withName("MetricCounter1")
+                .withHelp("Metric Help")
+                .withLabels("A","B")
+                .withCollectorReference(collectorReference)
+                .build();
+        
+        counter.inc("a","b");
+//         CounterCreateEvent counterCreateEvent = probe.expectMessageClass(CounterCreateEvent.class);
+
+        ExportRequestEvent exportRequest = new ExportRequestEvent()
+                .replyTo(probe.ref());
+
+        collectorReference.tell(exportRequest);
+
+        ExportReplyEvent telekinesisString = probe.expectMessageClass(ExportReplyEvent.class);
+        
+        LOGGER.info("prometheusString = {}",prometheusString);
+        LOGGER.info("telekinesisString = {}", telekinesisString.getText());
         assertEquals(prometheusString,telekinesisString.getText());
        
     }

@@ -27,12 +27,6 @@ import com.phyzicsz.telekinesis.metric.events.ExportReplyEvent;
 import com.phyzicsz.telekinesis.metric.events.ExportRequestEvent;
 import com.phyzicsz.telekinesis.metric.events.MetricEvent;
 import com.phyzicsz.telekinesis.metric.repository.CounterRepository;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -63,25 +57,25 @@ public class CollectorActor extends AbstractBehavior<MetricEvent> {
     }
 
     private Behavior<MetricEvent> onCounterCreateEvent(final CounterCreateEvent event) {
-        getContext().getLog().info("onCounterCreateEvent!");
+        getContext().getLog().debug("onCounterCreateEvent!");
         counterRepository.onCounterCreateEvent(event);
         return Behaviors.same();
     }
 
     private Behavior<MetricEvent> onCounterMonotonicIncrementEvent(final CounterMonotonicIncrementEvent event) {
-        getContext().getLog().info("onCounterCounterMonotonicIncrementEvent!");
+        getContext().getLog().debug("onCounterCounterMonotonicIncrementEvent!");
         counterRepository.onCounterMonotonicIncrementEvent(event);
         return Behaviors.same();
     }
 
     private Behavior<MetricEvent> onCounterIncrementEvent(final CounterIncrementEvent event) {
-        getContext().getLog().info("onCounterIncrementEvent!");
+        getContext().getLog().debug("onCounterIncrementEvent!");
         counterRepository.onCounterIncrementEvent(event);
         return Behaviors.same();
     }
 
     private Behavior<MetricEvent> onExportEvent(final ExportRequestEvent event) {
-        getContext().getLog().info("onExportEvent!");
+        getContext().getLog().debug("onExportEvent!");
 
         StringBuilder sb = new StringBuilder();
         counterRepository.export(sb);
